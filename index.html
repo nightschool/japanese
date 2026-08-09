@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
+  <title>Kotoba | Learn Japanese by Ear</title>
+  <meta name="description" content="Kotoba is a free Japanese trainer: kana charts, JLPT N5/N4 vocabulary and the most popular Japanese sentences, all with audio.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div id="app">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="logo">
+        <span class="logo-mark">こ</span>
+        <span class="logo-text">Kotoba<em>ことば</em></span>
+      </div>
+      <nav class="nav-links">
+        <div class="nav-item active" data-view="kana">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"></path><path d="M9 20h6"></path><path d="M12 4v16"></path></svg>
+          Kana Trainer
+        </div>
+        <div class="nav-item" data-view="vocab">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M7 7h10"></path><path d="M7 12h10"></path><path d="M7 17h10"></path></svg>
+          Flashcards
+        </div>
+        <div class="nav-item" data-view="sentences">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 9h8"></path><path d="M8 13h5"></path></svg>
+          Popular Sentences
+        </div>
+        <div class="nav-item" data-view="dict-n5">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>
+          N5 Dictionary
+        </div>
+        <div class="nav-item" data-view="dict-n4">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>
+          N4 Dictionary
+        </div>
+      </nav>
+      <div class="sidebar-footer">Tap anything to hear it spoken.</div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <!-- Kana Trainer View -->
+      <section id="view-kana" class="view active">
+        <div class="header">
+          <h1 id="kana-title">Hiragana Chart (ひらがな)</h1>
+          <p>Click on any character to hear its pronunciation.</p>
+          <div class="kana-toggle">
+            <button class="btn btn-primary active" id="btn-hiragana">Hiragana</button>
+            <button class="btn btn-secondary" id="btn-katakana">Katakana</button>
+          </div>
+        </div>
+        <div class="kana-grid" id="kana-grid-container">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- Vocabulary Flashcards View -->
+      <section id="view-vocab" class="view">
+        <div class="header">
+          <h1>Vocabulary Flashcards</h1>
+          <p>Test your memory. Click the card to reveal the translation.</p>
+        </div>
+        <div class="flashcard-container">
+          <div class="flashcard" id="flashcard">
+            <div class="flashcard-inner">
+              <div class="flashcard-front">
+                <div class="jp-text-container">
+                  <div class="jp-text" id="fc-jp">こんにちは</div>
+                  <button class="btn-icon" id="btn-play-vocab" title="Play Pronunciation">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+                  </button>
+                </div>
+                <div class="card-hint">Click to flip</div>
+              </div>
+              <div class="flashcard-back">
+                <div class="en-text" id="fc-en">Hello</div>
+                <div class="romaji-text" id="fc-romaji">Konnichiwa</div>
+                <div class="card-hint">Click to flip back</div>
+              </div>
+            </div>
+          </div>
+          <div class="flashcard-controls">
+            <button class="btn btn-secondary" id="btn-prev">Previous</button>
+            <button class="btn btn-primary" id="btn-next">Next Card</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Popular Sentences View -->
+      <section id="view-sentences" class="view">
+        <div class="header">
+          <h1>Most Popular Japanese Sentences</h1>
+          <p>The phrases you will actually hear and use every day. Click any sentence to play the audio.</p>
+          <div class="speed-toggle">
+            <button class="btn btn-secondary" id="btn-speed" aria-pressed="false">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+              <span id="speed-label">Slow playback: Off</span>
+            </button>
+            <span class="speed-hint">Applies to every view</span>
+          </div>
+        </div>
+        <div class="sentence-container" id="sentence-container">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- N5 Dictionary View -->
+      <section id="view-dict-n5" class="view">
+        <div class="header">
+          <h1>JLPT N5 Vocabulary</h1>
+          <p>Comprehensive N5 dictionary. Click any word to hear its pronunciation.</p>
+        </div>
+        <div class="dict-container" id="dict-n5-container">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- N4 Dictionary View -->
+      <section id="view-dict-n4" class="view">
+        <div class="header">
+          <h1>JLPT N4 Vocabulary</h1>
+          <p>Comprehensive N4 dictionary. Click any word to hear its pronunciation.</p>
+        </div>
+        <div class="dict-container" id="dict-n4-container">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

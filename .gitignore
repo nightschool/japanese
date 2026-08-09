@@ -1,0 +1,4 @@
+.DS_Store
+
+# large source dataset used to generate data.js; not needed by the site
+temp.json
