@@ -18,25 +18,29 @@
         <span class="logo-text">Kotoba<em>ことば</em></span>
       </div>
       <nav class="nav-links">
-        <div class="nav-item active" data-view="kana">
+        <div class="nav-item active" data-view="kana" data-short="Kana">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"></path><path d="M9 20h6"></path><path d="M12 4v16"></path></svg>
-          Kana Trainer
+          <span class="nav-label">Kana Trainer</span>
         </div>
-        <div class="nav-item" data-view="vocab">
+        <div class="nav-item" data-view="lookup" data-short="Lookup">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+          <span class="nav-label">Word Lookup</span>
+        </div>
+        <div class="nav-item" data-view="vocab" data-short="Cards">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"></rect><path d="M7 7h10"></path><path d="M7 12h10"></path><path d="M7 17h10"></path></svg>
-          Flashcards
+          <span class="nav-label">Flashcards</span>
         </div>
-        <div class="nav-item" data-view="sentences">
+        <div class="nav-item" data-view="sentences" data-short="Phrases">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><path d="M8 9h8"></path><path d="M8 13h5"></path></svg>
-          Popular Sentences
+          <span class="nav-label">Popular Sentences</span>
         </div>
-        <div class="nav-item" data-view="dict-n5">
+        <div class="nav-item" data-view="dict-n5" data-short="N5">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>
-          N5 Dictionary
+          <span class="nav-label">N5 Dictionary</span>
         </div>
-        <div class="nav-item" data-view="dict-n4">
+        <div class="nav-item" data-view="dict-n4" data-short="N4">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>
-          N4 Dictionary
+          <span class="nav-label">N4 Dictionary</span>
         </div>
       </nav>
       <div class="sidebar-footer">Tap anything to hear it spoken.</div>
@@ -57,6 +61,33 @@
         </div>
         <div class="kana-grid" id="kana-grid-container">
           <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- Word Lookup View -->
+      <section id="view-lookup" class="view">
+        <div class="header">
+          <h1>Word Lookup <span class="header-jp">查单词</span></h1>
+          <p>Type Japanese, romaji, English or Chinese. Every word you look up is saved below.</p>
+        </div>
+        <form class="lookup-form" id="lookup-form" autocomplete="off">
+          <input type="search" class="lookup-input" id="lookup-input" placeholder="e.g. 食べる, taberu, to eat, 吃" aria-label="Word to look up">
+          <button type="submit" class="btn btn-primary">Look up</button>
+        </form>
+        <div class="lookup-result" id="lookup-result">
+          <!-- Populated by JS -->
+        </div>
+        <div class="lookup-history">
+          <div class="sentence-group-header">
+            <span>History <span id="history-count"></span></span>
+          </div>
+          <div class="history-toolbar">
+            <input type="search" class="lookup-input history-filter" id="history-filter" placeholder="Filter history" aria-label="Filter history">
+            <button type="button" class="btn btn-secondary" id="btn-clear-history">Clear all</button>
+          </div>
+          <div class="history-list" id="history-list">
+            <!-- Populated by JS -->
+          </div>
         </div>
       </section>
 

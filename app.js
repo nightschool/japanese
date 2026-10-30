@@ -106,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
       item.classList.add('active');
       const targetView = document.getElementById(`view-${item.dataset.view}`);
       targetView.classList.add('active');
+      if (item.dataset.view === 'lookup') lookupInput.focus();
     });
   });
 
@@ -360,6 +361,287 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSpeed.classList.toggle('btn-primary', slowSpeech);
     btnSpeed.classList.toggle('btn-secondary', !slowSpeech);
   });
+
+  // --- Word Lookup Logic ---
+  const LOOKUP_HISTORY_KEY = 'kotoba.lookupHistory';
+  const LOOKUP_HISTORY_LIMIT = 500;
+  const KANA_RE = /[぀-ヿｦ-ﾟ]/;
+  const JAPANESE_RE = /[぀-ヿ㐀-鿿ｦ-ﾟ]/;
+  const PLAY_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>';
+
+  const lookupForm = document.getElementById('lookup-form');
+  const lookupInput = document.getElementById('lookup-input');
+  const lookupResult = document.getElementById('lookup-result');
+  const historyList = document.getElementById('history-list');
+  const historyCount = document.getElementById('history-count');
+  const historyFilter = document.getElementById('history-filter');
+
+  // Lookups and remote translations are untrusted, so never inject them raw
+  const escapeHtml = (text) => String(text ?? '').replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+
+  const localWords = [
+    ...n5VocabData.map(item => ({ ...item, level: 'N5' })),
+    ...n4VocabData.map(item => ({ ...item, level: 'N4' })),
+  ];
+
+  const glosses = (english) => english.toLowerCase().split(/[,;/]/).map(g => g.trim().replace(/^to /, ''));
+
+  const findLocalMatches = (query, japanese) => {
+    const q = query.toLowerCase().replace(/^to /, '');
+    const score = (item) => {
+      if (item.japanese === japanese || item.japanese === query) return 3;
+      if (item.romaji.toLowerCase() === q || glosses(item.english).includes(q)) return 2;
+      if (japanese && japanese.length > 1 && item.japanese.includes(japanese)) return 1;
+      return 0;
+    };
+    return localWords
+      .map(item => ({ item, rank: score(item) }))
+      .filter(m => m.rank > 0)
+      .sort((a, b) => b.rank - a.rank)
+      .slice(0, 6)
+      .map(m => m.item);
+  };
+
+  // Same free Google endpoint family as the audio; it allows cross-origin calls
+  const translate = async (text, sl, tl) => {
+    const params = new URLSearchParams({ client: 'gtx', ie: 'UTF-8', sl, tl, q: text });
+    ['t', 'bd', 'rm'].forEach(dt => params.append('dt', dt));
+    const res = await fetch(`https://translate.googleapis.com/translate_a/single?${params}`);
+    if (!res.ok) throw new Error(`Translate request failed: HTTP ${res.status}`);
+    const data = await res.json();
+
+    const segments = data[0] || [];
+    const romanization = segments.find(s => s[0] == null) || [];
+    return {
+      translation: segments.filter(s => typeof s[0] === 'string').map(s => s[0]).join(''),
+      sourceRomaji: romanization[3] || '',
+      targetRomaji: romanization[2] || '',
+      senses: (data[1] || []).map(([pos, terms]) => ({ pos, terms: terms.slice(0, 6) })).slice(0, 4),
+      source: data[2],
+    };
+  };
+
+  // Turns any input (kana, kanji, romaji, English, Chinese) into a Japanese headword
+  const resolveJapanese = async (query) => {
+    if (KANA_RE.test(query)) return query;
+
+    const romajiMatch = localWords.find(item => item.romaji.toLowerCase() === query.toLowerCase());
+    if (romajiMatch) return romajiMatch.japanese;
+
+    const result = await translate(query, 'auto', 'ja');
+    // Kanji-only input detected as Japanese stays as typed; Chinese gets translated
+    if (result.source === 'ja' && JAPANESE_RE.test(query)) return query;
+    return result.translation;
+  };
+
+  const fetchEntry = async (query) => {
+    const japanese = await resolveJapanese(query);
+    if (!JAPANESE_RE.test(japanese)) {
+      throw new Error(`No Japanese word found for "${query}". Try typing it in kana.`);
+    }
+    const [en, zh] = await Promise.all([
+      translate(japanese, 'ja', 'en'),
+      translate(japanese, 'ja', 'zh-CN'),
+    ]);
+    const local = localWords.find(item => item.japanese === japanese);
+    return {
+      japanese,
+      romaji: en.sourceRomaji || local?.romaji || '',
+      english: en.translation,
+      chinese: zh.translation,
+      senses: en.senses,
+      level: local?.level || '',
+    };
+  };
+
+  // --- Lookup History (persisted in localStorage) ---
+  const loadHistory = () => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(LOOKUP_HISTORY_KEY) || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (err) {
+      console.warn('Could not read lookup history', err);
+      return [];
+    }
+  };
+
+  let lookupHistory = loadHistory();
+
+  const saveHistory = () => {
+    try {
+      localStorage.setItem(LOOKUP_HISTORY_KEY, JSON.stringify(lookupHistory));
+    } catch (err) {
+      console.warn('Could not save lookup history', err);
+    }
+  };
+
+  const recordLookup = (query, entry) => {
+    const now = Date.now();
+    const existing = lookupHistory.find(h => h.japanese === entry.japanese);
+    lookupHistory = lookupHistory.filter(h => h !== existing);
+
+    const record = {
+      ...entry,
+      query,
+      count: (existing?.count || 0) + 1,
+      firstLookedUp: existing?.firstLookedUp || now,
+      lastLookedUp: now,
+    };
+    lookupHistory.unshift(record); // Most recent first
+    lookupHistory = lookupHistory.slice(0, LOOKUP_HISTORY_LIMIT);
+    saveHistory();
+    return record;
+  };
+
+  const formatDate = (timestamp) => new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const renderHistory = () => {
+    const filter = historyFilter.value.trim().toLowerCase();
+    const items = lookupHistory.filter(h => !filter ||
+      [h.japanese, h.romaji, h.english, h.chinese, h.query].some(f => (f || '').toLowerCase().includes(filter)));
+
+    historyCount.textContent = lookupHistory.length ? `(${lookupHistory.length})` : '';
+
+    if (lookupHistory.length === 0) {
+      historyList.innerHTML = '<div class="lookup-empty">Words you look up will appear here.</div>';
+      return;
+    }
+    if (items.length === 0) {
+      historyList.innerHTML = '<div class="lookup-empty">No saved words match that filter.</div>';
+      return;
+    }
+
+    historyList.innerHTML = '';
+    items.forEach(h => {
+      const row = document.createElement('div');
+      row.className = 'history-row';
+      row.innerHTML = `
+        <div class="history-main">
+          <span class="history-jp">${escapeHtml(h.japanese)}</span>
+          <span class="history-romaji">${escapeHtml(h.romaji)}</span>
+          <span class="history-meaning">${escapeHtml(h.english)}${h.chinese ? ` · ${escapeHtml(h.chinese)}` : ''}</span>
+        </div>
+        <div class="history-meta">
+          ${h.count > 1 ? `<span class="history-badge" title="Times looked up">×${h.count}</span>` : ''}
+          <span>${formatDate(h.lastLookedUp)}</span>
+        </div>
+        <button class="btn-icon history-play" title="Play Pronunciation">${PLAY_ICON}</button>
+        <button class="btn-icon history-remove" title="Remove from history">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+        </button>
+      `;
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('.history-play')) {
+          playAudio(h.japanese);
+        } else if (e.target.closest('.history-remove')) {
+          lookupHistory = lookupHistory.filter(item => item !== h);
+          saveHistory();
+          renderHistory();
+        } else {
+          // Saved entries show instantly, without a network round trip
+          renderResult(h, findLocalMatches(h.query || h.japanese, h.japanese));
+          lookupResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      });
+      historyList.appendChild(row);
+    });
+  };
+
+  const renderResult = (entry, localMatches) => {
+    const senses = (entry.senses || []).map(s => `
+      <div class="lookup-sense">
+        <span class="lookup-pos">${escapeHtml(s.pos)}</span>
+        <span>${s.terms.map(escapeHtml).join(', ')}</span>
+      </div>
+    `).join('');
+
+    const related = localMatches.map(item => `
+      <div class="dict-card lookup-local" data-jp="${escapeHtml(item.japanese)}">
+        <div>
+          <div class="dict-jp">${escapeHtml(item.japanese)} <span class="lookup-level">${item.level}</span></div>
+          <div class="dict-romaji">${escapeHtml(item.romaji)}</div>
+          <div class="dict-en">${escapeHtml(item.english)}</div>
+        </div>
+        <button class="btn-icon" title="Play Pronunciation">${PLAY_ICON}</button>
+      </div>
+    `).join('');
+
+    lookupResult.innerHTML = `
+      <div class="lookup-card">
+        <div class="lookup-card-head">
+          <div>
+            <div class="lookup-jp">${escapeHtml(entry.japanese)}
+              ${entry.level ? `<span class="lookup-level">${entry.level}</span>` : ''}
+            </div>
+            <div class="lookup-romaji">${escapeHtml(entry.romaji)}</div>
+          </div>
+          <button class="btn-icon" id="btn-play-lookup" title="Play Pronunciation">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+          </button>
+        </div>
+        <div class="lookup-meanings">
+          ${entry.english ? `<div class="lookup-meaning"><span class="lookup-lang">EN</span>${escapeHtml(entry.english)}</div>` : ''}
+          ${entry.chinese ? `<div class="lookup-meaning"><span class="lookup-lang">中</span>${escapeHtml(entry.chinese)}</div>` : ''}
+        </div>
+        ${senses ? `<div class="lookup-senses">${senses}</div>` : ''}
+      </div>
+      ${related ? `<div class="sentence-group-header lookup-related-header">In your N5 / N4 lists</div><div class="dict-grid">${related}</div>` : ''}
+    `;
+
+    document.getElementById('btn-play-lookup').addEventListener('click', () => playAudio(entry.japanese));
+    lookupResult.querySelectorAll('.lookup-local').forEach(card => {
+      card.addEventListener('click', () => playAudio(card.dataset.jp));
+    });
+  };
+
+  let lookupToken = 0;
+
+  const lookupWord = async (rawQuery) => {
+    const query = rawQuery.trim();
+    if (!query) return;
+    const attempt = ++lookupToken;
+    lookupResult.innerHTML = '<div class="lookup-empty">Looking up…</div>';
+
+    let entry;
+    try {
+      entry = await fetchEntry(query);
+    } catch (err) {
+      if (attempt !== lookupToken) return;
+      // Offline or rate-limited: fall back to the built-in word lists
+      const local = findLocalMatches(query, query);
+      if (local.length === 0) {
+        lookupResult.innerHTML = `<div class="lookup-empty lookup-error">${escapeHtml(err.message)}</div>`;
+        return;
+      }
+      console.warn('Online lookup failed, using local word lists', err);
+      entry = { japanese: local[0].japanese, romaji: local[0].romaji, english: local[0].english, chinese: '', senses: [], level: local[0].level };
+    }
+    if (attempt !== lookupToken) return; // A newer lookup has started
+
+    const record = recordLookup(query, entry);
+    renderResult(record, findLocalMatches(query, record.japanese));
+    renderHistory();
+    playAudio(record.japanese);
+  };
+
+  lookupForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    lookupWord(lookupInput.value);
+  });
+
+  historyFilter.addEventListener('input', renderHistory);
+
+  document.getElementById('btn-clear-history').addEventListener('click', () => {
+    if (lookupHistory.length === 0) return;
+    if (!confirm(`Delete all ${lookupHistory.length} saved words?`)) return;
+    lookupHistory = [];
+    saveHistory();
+    renderHistory();
+  });
+
+  renderHistory();
 
   // --- Dictionary Rendering Logic (N5 & N4) ---
   const renderDictionary = (dataArray, containerId) => {
