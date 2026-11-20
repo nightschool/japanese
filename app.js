@@ -643,6 +643,95 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderHistory();
 
+  // --- Travel Japanese Logic ---
+  const travelContainer = document.getElementById('travel-container');
+  const travelSearch = document.getElementById('travel-search');
+  const travelChips = document.getElementById('travel-chips');
+  const btnTravelPractice = document.getElementById('btn-travel-practice');
+  const travelPracticeHint = document.getElementById('travel-practice-hint');
+  let travelScene = 'all';
+  let travelPractice = false;
+
+  const renderTravelChips = () => {
+    const total = travelScenes.reduce((sum, s) => sum + s.phrases.length, 0);
+    const chips = [{ id: 'all', zh: '全部', count: total }, ...travelScenes.map(s => ({ id: s.id, zh: s.zh, count: s.phrases.length }))];
+    travelChips.innerHTML = chips.map(c => `
+      <button type="button" class="travel-chip${c.id === travelScene ? ' active' : ''}" data-scene="${c.id}" role="tab" aria-selected="${c.id === travelScene}">
+        ${escapeHtml(c.zh)} <span class="travel-chip-count">${c.count}</span>
+      </button>
+    `).join('');
+  };
+
+  const renderTravel = () => {
+    const q = travelSearch.value.trim().toLowerCase();
+    const matches = (p) => !q || [p.ja, p.romaji, p.zh, p.en].some(f => f.toLowerCase().includes(q));
+
+    const groups = travelScenes
+      .filter(s => travelScene === 'all' || s.id === travelScene)
+      .map(s => ({ scene: s, phrases: s.phrases.filter(matches) }))
+      .filter(g => g.phrases.length > 0);
+
+    travelContainer.classList.toggle('practice', travelPractice);
+    if (groups.length === 0) {
+      travelContainer.innerHTML = '<div class="lookup-empty">没有找到匹配的句子，换个关键词试试。</div>';
+      return;
+    }
+
+    travelContainer.innerHTML = groups.map(({ scene, phrases }) => `
+      <div class="sentence-group">
+        <div class="sentence-group-header">${escapeHtml(scene.zh)} · ${escapeHtml(scene.en)}</div>
+        ${q ? '' : `<div class="travel-tip">💡 ${escapeHtml(scene.tip)}</div>`}
+        ${phrases.map(p => `
+          <div class="sentence-row travel-row${p.hear ? ' is-hear' : ''}" data-jp="${escapeHtml(p.ja)}">
+            <div class="sentence-content">
+              ${p.hear ? '<span class="hear-badge">👂 会听到</span>' : ''}
+              <div class="travel-answer">
+                <div class="sentence-jp">${escapeHtml(p.ja)}</div>
+                <div class="sentence-romaji">${escapeHtml(p.romaji)}</div>
+              </div>
+              <div class="travel-zh">${escapeHtml(p.zh)}</div>
+              <div class="sentence-en">${escapeHtml(p.en)}</div>
+            </div>
+            <button class="btn-icon sentence-play-btn" title="Play Pronunciation">${PLAY_ICON}</button>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+  };
+
+  travelContainer.addEventListener('click', (e) => {
+    const row = e.target.closest('.travel-row');
+    if (!row) return;
+    // "〜" and "〇〇" are blanks for the learner to fill, not something to read aloud
+    playAudio(row.dataset.jp.replace(/[〜〇]+/g, ''));
+    if (travelPractice) row.classList.add('revealed');
+  });
+
+  travelChips.addEventListener('click', (e) => {
+    const chip = e.target.closest('.travel-chip');
+    if (!chip) return;
+    travelScene = chip.dataset.scene;
+    renderTravelChips();
+    renderTravel();
+  });
+
+  travelSearch.addEventListener('input', renderTravel);
+
+  btnTravelPractice.addEventListener('click', () => {
+    travelPractice = !travelPractice;
+    btnTravelPractice.textContent = `练习模式：${travelPractice ? '开' : '关'}`;
+    btnTravelPractice.setAttribute('aria-pressed', String(travelPractice));
+    btnTravelPractice.classList.toggle('btn-primary', travelPractice);
+    btnTravelPractice.classList.toggle('btn-secondary', !travelPractice);
+    travelPracticeHint.hidden = !travelPractice;
+    renderTravel(); // Re-render so every answer starts hidden again
+  });
+
+  if (typeof travelScenes !== 'undefined') {
+    renderTravelChips();
+    renderTravel();
+  }
+
   // --- Dictionary Rendering Logic (N5 & N4) ---
   const renderDictionary = (dataArray, containerId) => {
     const container = document.getElementById(containerId);

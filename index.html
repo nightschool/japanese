@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="referrer" content="no-referrer">
   <title>Kotoba | Learn Japanese by Ear</title>
-  <meta name="description" content="Kotoba is a free Japanese trainer: kana charts, JLPT N5/N4 vocabulary and the most popular Japanese sentences, all with audio.">
+  <meta name="description" content="Kotoba is a free Japanese trainer: kana charts, JLPT N5/N4 vocabulary, travel phrases and the most popular Japanese sentences, all with audio.">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -21,6 +21,10 @@
         <div class="nav-item active" data-view="kana" data-short="Kana">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"></path><path d="M9 20h6"></path><path d="M12 4v16"></path></svg>
           <span class="nav-label">Kana Trainer</span>
+        </div>
+        <div class="nav-item" data-view="travel" data-short="Travel">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"></path></svg>
+          <span class="nav-label">Travel Japanese</span>
         </div>
         <div class="nav-item" data-view="lookup" data-short="Lookup">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
@@ -60,6 +64,25 @@
           </div>
         </div>
         <div class="kana-grid" id="kana-grid-container">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- Travel Japanese View -->
+      <section id="view-travel" class="view">
+        <div class="header">
+          <h1>Travel Japanese <span class="header-jp">旅行日语</span></h1>
+          <p>按场景整理的旅行实用句，点任意一句听发音。标着 <span class="hear-badge">👂 会听到</span> 的是店员、路人会对你说的话，听懂它们才能接上对话。</p>
+        </div>
+        <div class="travel-toolbar">
+          <input type="search" class="lookup-input" id="travel-search" placeholder="搜索：中文、日语、romaji 或 English" aria-label="Search travel phrases">
+          <button type="button" class="btn btn-secondary" id="btn-travel-practice" aria-pressed="false">练习模式：关</button>
+        </div>
+        <div class="travel-chips" id="travel-chips" role="tablist" aria-label="Scenes">
+          <!-- Populated by JS -->
+        </div>
+        <p class="travel-practice-hint" id="travel-practice-hint" hidden>练习模式：先看中文，自己试着说出日语，再点一下显示答案并播放发音。</p>
+        <div class="sentence-container" id="travel-container">
           <!-- Populated by JS -->
         </div>
       </section>
@@ -167,6 +190,7 @@
   </div>
 
   <script src="data.js"></script>
+  <script src="travel.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

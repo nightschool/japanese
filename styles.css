@@ -810,8 +810,128 @@ body {
   padding: 0.45rem;
 }
 
+/* Travel Japanese */
+.travel-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.travel-toolbar .lookup-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.travel-toolbar .btn {
+  white-space: nowrap;
+}
+
+.travel-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.travel-chip {
+  font-family: var(--font-en);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface-color);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.travel-chip:hover {
+  color: var(--text-main);
+  background: var(--surface-hover);
+}
+
+.travel-chip.active {
+  color: var(--text-main);
+  background: var(--primary-soft);
+  border-color: var(--primary-accent);
+}
+
+.travel-chip-count {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin-left: 0.15rem;
+}
+
+.travel-practice-hint {
+  color: var(--secondary-accent);
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.travel-tip {
+  background: var(--secondary-soft);
+  border-left: 3px solid var(--secondary-accent);
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-main);
+}
+
+.travel-zh {
+  font-size: 1.05rem;
+  color: var(--text-main);
+}
+
+.travel-row .sentence-en {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.hear-badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--secondary-accent);
+  background: var(--secondary-soft);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+}
+
+.travel-row.is-hear {
+  border-left-color: var(--secondary-accent);
+}
+
+/* Practice mode: hide the Japanese until the row is tapped */
+.practice .travel-row:not(.revealed) .travel-answer {
+  filter: blur(8px);
+  user-select: none;
+}
+
+.practice .travel-answer {
+  transition: filter var(--transition-smooth);
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
+  .travel-toolbar {
+    flex-direction: column;
+  }
+
+  .travel-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin: 0 -1rem 1rem;
+    padding: 0 1rem 0.25rem;
+    scrollbar-width: none;
+  }
+
+  .travel-chip {
+    flex-shrink: 0;
+  }
+
   #app {
     flex-direction: column;
   }
@@ -874,6 +994,7 @@ body {
   }
 
   .main-content {
+    width: 100%; /* margin:auto stops the stretch, so pin the width or the scrolling chip row widens the page */
     padding: 1.5rem 1rem 6rem 1rem; /* Extra bottom padding so content isn't hidden by tab bar */
   }
 
